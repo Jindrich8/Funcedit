@@ -1,0 +1,12 @@
+[package]
+name = "plots"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bit-iter = "1.2.0"
+chrono = "0.4.38"
+csv = "1.3.0"
+eframe = "0.28.1"
+egui_plot = "0.28.1"
+enumflags2 = "0.7.10"
