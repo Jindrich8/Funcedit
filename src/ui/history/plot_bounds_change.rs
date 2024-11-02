@@ -11,7 +11,7 @@ use crate::{
     utils::Changeable,
 };
 
-use super::{ApplyDataOp, History, OwnedHistoryOp};
+use super::{ApplyDataOp, OwnedHistoryOp};
 
 impl Changeable<PlotBoundsChange> for PlotBounds {
     fn get_change(&self, new_value: &Self) -> PlotBoundsChange {
@@ -32,14 +32,13 @@ impl Changeable<PlotBoundsChange> for PlotBounds {
     }
 }
 
-pub struct PlotBoundsChangeOp<'a, 'b> {
-    changes: &'a mut History,
+pub struct PlotBoundsChangeOp<'b> {
     change: &'b PlotBoundsChange,
 }
 
-impl<'a, 'b> PlotBoundsChangeOp<'a, 'b> {
-    pub fn new(changes: &'a mut History, change: &'b PlotBoundsChange) -> Self {
-        Self { changes, change }
+impl<'b> PlotBoundsChangeOp<'b> {
+    pub fn new(change: &'b PlotBoundsChange) -> Self {
+        Self { change }
     }
 
     pub fn has_effect(&self) -> bool {
@@ -47,26 +46,24 @@ impl<'a, 'b> PlotBoundsChangeOp<'a, 'b> {
     }
 }
 
-impl<'a, 'b> TryInto<OwnedHistoryOp> for PlotBoundsChangeOp<'a, 'b> {
+impl<'b> TryInto<OwnedHistoryOp> for PlotBoundsChangeOp<'b> {
     type Error = OpCreateErr;
 
     fn try_into(self) -> Result<OwnedHistoryOp, Self::Error> {
         if !self.has_effect() {
             Err(OpCreateErr::OpDoesNotHaveEffect)
         } else {
-            self.changes.bounds_changes.push_back(self.change.clone());
-            self.changes.op_pushed();
-            Ok(OwnedHistoryOp::ChangePlotBounds)
+            Ok(OwnedHistoryOp::ChangePlotBounds(self.change.clone()))
         }
     }
 }
 
-impl<'a, 'b> InOp<OwnedHistoryOp, ActionId> for PlotBoundsChangeOp<'a, 'b> {
+impl<'b> InOp<OwnedHistoryOp, ActionId> for PlotBoundsChangeOp<'b> {
     fn try_combine(self, owned: &mut OwnedHistoryOp) -> Result<(), OpCombineErr<Self>> {
         match owned {
-            OwnedHistoryOp::ChangePlotBounds => {
+            OwnedHistoryOp::ChangePlotBounds(change) => {
                 if self.has_effect() {
-                    *self.changes.bounds_changes.back_mut().unwrap() += self.change;
+                    *change += self.change;
                     Ok(())
                 } else {
                     Err(OpCombineErr::OpDoesNotHaveEffect)

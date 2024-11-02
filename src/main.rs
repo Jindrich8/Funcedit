@@ -7,7 +7,7 @@ use plots::ui::MyApp;
 
 fn main() -> eframe::Result {
     // env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
-    std::env::set_var("RUST_BACKTRACE", "1");
+    std::env::set_var("RUST_BACKTRACE", "full");
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default().with_inner_size([640.0, 480.0]),
         ..Default::default()

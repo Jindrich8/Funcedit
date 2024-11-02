@@ -48,7 +48,7 @@ impl<
 {
     pub fn iter<OpOut>(&'a self) -> impl Iterator<Item = SharedOutOp<'a, OpOut>>
     where
-        OpOwned: OwnedOp<OpOut>,
+        OpOwned: OwnedOp< OpOut>,
     {
         let iter = self
             .history

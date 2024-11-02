@@ -235,7 +235,7 @@ impl<
 
     fn iter<OpOut, const UNDO: bool>(&'a self) -> impl Iterator<Item = ApplyOp<'a, OpOut>>
     where
-        OpOwned: OwnedOp<OpOut>,
+        OpOwned: OwnedOp< OpOut>,
     {
         Self::get_iter::<OpOut, UNDO>(&self.history, self.index)
     }
@@ -472,7 +472,7 @@ trait SpecializedEntry<
 
     fn undo_iter<'b, OpOut>(&'b self) -> impl Iterator<Item = ApplyOp<'b, OpOut>>
     where
-        OpOwned: OwnedOp<OpOut> + 'b,
+        OpOwned: OwnedOp< OpOut> + 'b,
         NonAlteringGraphOpHelper: 'b,
         OpGroupId: 'b,
     {
@@ -482,7 +482,7 @@ trait SpecializedEntry<
 
     fn redo_iter<'b, OpOut>(&'b self) -> impl Iterator<Item = ApplyOp<'b, OpOut>>
     where
-        OpOwned: OwnedOp<OpOut> + 'b,
+        OpOwned: OwnedOp< OpOut> + 'b,
         NonAlteringGraphOpHelper: 'b,
         OpGroupId: 'b,
     {

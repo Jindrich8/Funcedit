@@ -358,19 +358,19 @@ impl<
 
     pub fn undo(
         &'a mut self,
-    ) -> Option<UndoEntry<'a, OpGroupId, OpOwned, NonAlteringGraphOpHelper>> {
+    ) -> Option<SharedUndoEntry<'a, OpGroupId, OpOwned, NonAlteringGraphOpHelper>> {
         self.open_options = OpenOptions::None;
         self.undo_len = self.undo_len.saturating_sub(1);
-        UndoEntry::new(self.undo_len, self)
+        SharedUndoEntry::new(self.undo_len, self)
     }
 
     pub fn redo(
         &'a mut self,
-    ) -> Option<RedoEntry<'a, OpGroupId, OpOwned, NonAlteringGraphOpHelper>> {
+    ) -> Option<SharedRedoEntry<'a, OpGroupId, OpOwned, NonAlteringGraphOpHelper>> {
         if self.undo_len < self.len() {
             self.undo_len += 1;
             self.open_options = OpenOptions::None;
-            return RedoEntry::new(self.undo_len - 1, self);
+            return SharedRedoEntry::new(self.undo_len - 1, self);
         }
         None
     }

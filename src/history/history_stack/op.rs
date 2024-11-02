@@ -150,7 +150,7 @@ impl<'a, OtherOp> Op<OtherOp> {
 
     pub fn get_shared<SharedOtherOp>(&'a self) -> SharedOutOp<'a, SharedOtherOp>
     where
-        OtherOp: OwnedOp<SharedOtherOp>,
+        OtherOp: OwnedOp< SharedOtherOp>,
     {
         match self.get_order_matters_op() {
             OrderMattersOp::Graph(g) => SharedOutOp::Graph(g),
@@ -162,7 +162,7 @@ impl<'a, OtherOp> Op<OtherOp> {
         op: Option<&'a Self>,
     ) -> Option<SharedOutOp<'a, SharedOtherOp>>
     where
-        OtherOp: OwnedOp<SharedOtherOp>,
+        OtherOp: OwnedOp< SharedOtherOp>,
     {
         if let Some(op) = op {
             Some(op.get_shared())

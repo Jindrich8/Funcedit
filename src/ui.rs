@@ -12,7 +12,8 @@ use std::{
 
 use chrono::{NaiveDate, NaiveDateTime, TimeDelta};
 use history::{
-    plot_bounds_change::change::PlotBoundsChange, ApplyDataOp, OwnedHistoryOp, SharedDataOp,
+    plot_bounds_change::{change::PlotBoundsChange, PlotBoundsChangeOp},
+    ApplyDataOp, OwnedHistoryOp, SharedDataOp,
 };
 use plotter::Plotter;
 // it's an example
@@ -100,7 +101,6 @@ impl IsGraphOpNonAltering<ActionId> for NonAlteringGraphOpHelper {
 
 pub struct MyApp {
     graph: BasicReversibleGraph<ActionId, OwnedHistoryOp, NonAlteringGraphOpHelper>,
-    history: ui::history::History,
     selection_range: RangeInclusive<X>,
     selection: SelectionVLines,
     legend_entries: Vec<SimpleLegendEntry>,
@@ -109,9 +109,9 @@ pub struct MyApp {
 
 impl Default for MyApp {
     fn default() -> Self {
-        let path = r#"C:\Users\Jindra\Downloads\UVN_TO_obj23_zap0_reg3.txt"#;
+        let path = r#"C:\Users\Jindra\Downloads\1124-graph.txt"#;
         let mut funcs = Vec::new();
-        let res = Importer::import(&path, &mut funcs).unwrap();
+        let res = Importer::import(path.to_string(), &mut funcs).unwrap();
         let graph = Graph::new(funcs.into_iter().map(|b| b.into()).collect());
         let mut history = History::new();
         history.with_options(HistoryOption::TreatNonAlteringEntriesAsRegular);
@@ -136,7 +136,6 @@ impl Default for MyApp {
                 .enumerate()
                 .map(|(i, name)| SimpleLegendEntry::new(name, utils::auto_color(i), false))
                 .collect(),
-            history: ui::history::History::new(),
         }
     }
 }
@@ -183,13 +182,10 @@ impl MyApp {
                 .clicked()
             {
                 self.graph.undo(|op| {
-                    if let Some(op) = self.history.undo(op) {
-                        match op {
-                            history::SharedDataOp::ChangePlotBounds(change) => {
-                                self.plot.bounds.apply_change(change);
-                            }
-                        }
-                    }
+                    let op = ApplyDataOp::new(&op, |shared| match shared {
+                        history::SharedHistoryOp::ChangePlotBounds(bounds) => bounds,
+                    });
+                    self.plot.bounds.apply_change(op);
                 });
             }
             if ui
@@ -197,13 +193,10 @@ impl MyApp {
                 .clicked()
             {
                 self.graph.redo(|op| {
-                    if let Some(op) = self.history.redo(op) {
-                        match op {
-                            SharedDataOp::ChangePlotBounds(change) => {
-                                self.plot.bounds.apply_change(change);
-                            }
-                        }
-                    }
+                    let op = ApplyDataOp::new(&op, |shared| match shared {
+                        history::SharedHistoryOp::ChangePlotBounds(bounds) => bounds,
+                    });
+                    self.plot.bounds.apply_change(op);
                 });
             }
             ui.label(format!("{:#?}", self.graph.graph().selection()));
@@ -481,7 +474,6 @@ impl eframe::App for MyApp {
                 ScrollArea::vertical()
                     .id_source("redo_scroll_area")
                     .show(ui, |ui| {
-                        let mut history = self.history.iter();
                         self.graph
                             .history()
                             .redo_iter()
@@ -497,8 +489,7 @@ impl eframe::App for MyApp {
                                                 format!("{:#?}", op)
                                             }
                                             ApplyOp::Other(op) => {
-                                                let v = history.next_redo(op).unwrap();
-                                                format!("{:#?}", v)
+                                                format!("{:#?}", op)
                                             }
                                         };
                                         ui.label(op_str);
@@ -513,7 +504,6 @@ impl eframe::App for MyApp {
                 ScrollArea::vertical()
                     .id_source("undo_scroll_area")
                     .show(ui, |ui| {
-                        let mut history = self.history.iter();
                         self.graph
                             .history()
                             .undo_iter()
@@ -529,8 +519,7 @@ impl eframe::App for MyApp {
                                                 format!("{:#?}", op)
                                             }
                                             ApplyOp::Other(op) => {
-                                                let v = history.next_undo(op).unwrap();
-                                                format!("{:#?}", v)
+                                                format!("{:#?}", op)
                                             }
                                         };
                                         ui.label(op_str);
@@ -596,7 +585,7 @@ impl eframe::App for MyApp {
                             let x_bounds = new_bounds.range_x();
                             Self::selection_control(&mut selection, &x_bounds);
                             self.graph.open_action(ActionId::Conditions).other(
-                                self.history.bounds_change(&PlotBoundsChange::from_old_new(
+                                PlotBoundsChangeOp::new(&PlotBoundsChange::from_old_new(
                                     &old_bounds,
                                     new_bounds,
                                 )),
